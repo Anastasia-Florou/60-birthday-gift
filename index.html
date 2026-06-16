@@ -454,17 +454,18 @@
         headers:{"Content-Type":"application/json","Accept":"application/json"},
         body: JSON.stringify(payload)
       });
+      const data = await res.json().catch(()=>({}));
       if(res.ok){
         f.style.display="none";
         done.textContent="Στάλθηκε! Θα σας πάρουμε τηλέφωνο για να επιβεβαιώσουμε. 💛";
       } else {
-        throw new Error();
+        throw new Error(data.error || data.errors?.[0]?.message || res.status);
       }
-    } catch {
+    } catch(err){
       btn.disabled=false;
       btn.textContent="Στείλε μας τα στοιχεία ✈️";
       done.className="feedback err";
-      done.textContent="Κάτι πήγε στραβά — δοκίμασε ξανά.";
+      done.textContent="Κάτι πήγε στραβά: " + err.message;
     }
     return false;
   }
