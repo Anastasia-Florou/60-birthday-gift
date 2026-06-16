@@ -189,12 +189,12 @@
 
       <div class="steps">
         <div class="step">
-          Λύσε ως προς <strong>α</strong>:<br/>
-          <span class="eq">3α − 7 = α + 5</span>
+          Λύσε ως προς <strong>α</strong>, με α &gt; 4:<br/>
+          <span class="eq">log₂(α) + log₂(α − 4) = log₂(12)</span>
         </div>
         <div class="step">
-          Βρες τη θετική τιμή του <strong>β</strong>:<br/>
-          <span class="eq">β² − 5β − 50 = 0</span>
+          Βρες τη μεγαλύτερη ρίζα του <strong>β</strong>:<br/>
+          <span class="eq">β² − 11β + 10 = 0</span>
         </div>
         <div class="step">
           Υπολόγισε:<br/>
@@ -227,7 +227,7 @@
   <section id="stage-ticket" class="stage">
     <div class="card">
       <h2>Το δώρο σου: μια πτήση για να έρθεις να μας δεις ✈️</h2>
-      <p>Ένα βουτσέρ <b>200€</b> για αεροπορικό εισιτήριο, για να το εξαργυρώσεις όποτε θες.</p>
+      <p>Ένα voucher <b>200€</b> για αεροπορικό εισιτήριο, για να το εξαργυρώσεις όποτε θες.</p>
 
       <div class="ticket">
         <div class="main">
@@ -249,7 +249,7 @@
             <div><b>Θέση</b>VIP (όχι πραγματικά)</div>
           </div>
           <div style="margin-top:18px">
-            <div class="tk-label">Αξία βουτσέρ</div>
+            <div class="tk-label">Αξία voucher</div>
             <div class="tk-value">€200</div>
           </div>
           <div class="barcode"></div>
@@ -267,7 +267,7 @@
       </div>
 
       <p class="note">
-        Το βουτσέρ <b>δεν λήγει ποτέ</b>. Αποθήκευσε αυτόν τον σύνδεσμο κάπου βολικό.
+        Το voucher <b>δεν λήγει ποτέ</b>. Αποθήκευσε αυτόν τον σύνδεσμο κάπου βολικό.
         Όταν βρεις πτήση που σε ενδιαφέρει, πάτα το παρακάτω κουμπί και συμπλήρωσε τα στοιχεία —
         εμείς αναλαμβάνουμε την κράτηση. 💛
       </p>
@@ -304,15 +304,26 @@
             <input type="time" name="time" />
           </div>
         </div>
+        <div class="field">
+          <label>Αεροπορική εταιρεία</label>
+          <input type="text" name="airline" placeholder="π.χ. KLM, Aegean" required />
+        </div>
+        <div class="field" style="margin-top:22px">
+          <label style="font-size:15px;color:var(--gold);letter-spacing:.06em">ΠΤΗΣΗ ΕΠΙΣΤΡΟΦΗΣ</label>
+        </div>
         <div class="grid2">
           <div class="field">
-            <label>Αεροπορική εταιρεία</label>
-            <input type="text" name="airline" placeholder="π.χ. KLM, Aegean" required />
+            <label>Ημερομηνία επιστροφής</label>
+            <input type="date" name="return-date" />
           </div>
           <div class="field">
-            <label>Πτήση επιστροφής</label>
-            <input type="text" name="return" placeholder="π.χ. 12 Ιουλίου, βράδυ" />
+            <label>Ώρα επιστροφής</label>
+            <input type="time" name="return-time" />
           </div>
+        </div>
+        <div class="field">
+          <label>Αεροπορική εταιρεία επιστροφής</label>
+          <input type="text" name="return-airline" placeholder="π.χ. KLM, Aegean" />
         </div>
         <div class="field">
           <label>Σχόλια (αριθμός πτήσης, αποσκευές, κ.λπ.)</label>
@@ -361,8 +372,8 @@
   }
 
   /* ---- riddle logic ----
-     3α − 7 = α + 5  →  α = 6
-     β² − 5β − 50 = 0  →  (β−10)(β+5) = 0  →  β = 10
+     log₂(α) + log₂(α−4) = log₂(12)  →  α(α−4) = 12  →  α²−4α−12 = 0  →  α = 6
+     β² − 11β + 10 = 0  →  (β−10)(β−1) = 0  →  β = 10 (μεγαλύτερη ρίζα)
      α · β = 6 × 10 = 60
   ---- */
   let tries=0;
@@ -371,7 +382,7 @@
     const fb=document.getElementById("feedback");
     if(val==="60"||val==="εξήντα"||val==="εξηντα"){
       fb.className="feedback ok";
-      fb.textContent="Σωστά! α = 6, β = 10, άρα α · β = 60. Ακριβώς τα κεριά σου. ✨";
+      fb.textContent="Σωστά! α = 6, β = 10, άρα α · β = 60. ✨";
       burst();
       setTimeout(()=>go("redeem"),1500);
     }else{
@@ -379,13 +390,13 @@
       fb.className="feedback err";
       fb.textContent = tries<2
         ? "Όχι ακριβώς — ξαναέλεγξε τους υπολογισμούς σου."
-        : "Το τελικό αποτέλεσμα είναι ο αριθμός των κεριών στην τούρτα σου σήμερα.";
+        : "Θυμήσου: log(a) + log(b) = log(a·b). Το αποτέλεσμα είναι ο αριθμός των κεριών σου.";
     }
   }
   function showHint(){
     const fb=document.getElementById("feedback");
     fb.className="feedback";
-    fb.textContent="Υπόδειξη: Για τη β² − 5β − 50 = 0, δοκίμασε παραγοντοποίηση (β − ?)(β + ?) = 0.";
+    fb.textContent="Υπόδειξη: Χρησιμοποίησε log(a) + log(b) = log(a·b) στο πρώτο ερώτημα, κι έπειτα παραγοντοποίησε.";
   }
 
   /* ---- redeem ---- */
@@ -399,12 +410,18 @@
     const body=
 `Γεια σας! Εδώ είναι τα στοιχεία της πτήσης για το δώρο μου (${VOUCHER}):
 
+ΑΝΑΧΩΡΗΣΗ
 Από:              ${g("from")}
 Προς:             ${g("to")}
 Ημερομηνία:       ${g("date")}
 Ώρα:              ${g("time")}
 Αεροπορική:       ${g("airline")}
-Επιστροφή:        ${g("return")}
+
+ΕΠΙΣΤΡΟΦΗ
+Ημερομηνία:       ${g("return-date")}
+Ώρα:              ${g("return-time")}
+Αεροπορική:       ${g("return-airline")}
+
 Σχόλια:           ${g("notes")}
 
 Σας αγαπώ, Μαμά`;
