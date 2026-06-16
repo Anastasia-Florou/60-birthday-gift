@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Happy 60th 🎉</title>
+<style>
+  :root{
+    --bg:#0b1530;
+    --bg2:#142150;
+    --ink:#f4f1e8;
+    --muted:#9fb0d8;
+    --gold:#f4c95d;
+    --gold-deep:#d9a93a;
+    --accent:#5ad1c9;
+    --pink:#ff8fb1;
+    --card:#0f1c44;
+    --line:rgba(244,201,93,.35);
+    --ok:#7ee08a;
+    --err:#ff7b7b;
+    --font:"Georgia","Cambria",serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--font);
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 700px at 50% -10%, var(--bg2), transparent 60%),
+      radial-gradient(900px 600px at 90% 110%, #1c2a66, transparent 55%),
+      var(--bg);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+
+  /* floating math symbols background */
+  #math-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .glyph{
+    position:absolute;color:rgba(244,201,93,.10);
+    font-size:42px;animation:float linear infinite;user-select:none;white-space:nowrap;
+  }
+  @keyframes float{
+    0%{transform:translateY(110vh) rotate(0deg);opacity:0}
+    10%{opacity:1}
+    90%{opacity:1}
+    100%{transform:translateY(-20vh) rotate(360deg);opacity:0}
+  }
+
+  .wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:36px 20px 80px}
+
+  .stage{display:none;animation:rise .7s ease both}
+  .stage.active{display:block}
+  @keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+
+  /* ---------- Landing ---------- */
+  .eyebrow{letter-spacing:.32em;text-transform:uppercase;color:var(--accent);
+    font-size:13px;text-align:center;margin-bottom:10px}
+  .sixty{
+    text-align:center;font-size:clamp(120px,34vw,260px);line-height:.9;
+    font-weight:bold;margin:6px 0 0;
+    background:linear-gradient(180deg,var(--gold),var(--gold-deep));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 8px 30px rgba(244,201,93,.25));
+  }
+  h1{text-align:center;font-size:clamp(26px,5vw,40px);margin:.2em 0 .1em;font-weight:normal}
+  .sub{text-align:center;color:var(--muted);font-size:18px;max-width:520px;margin:8px auto 0;line-height:1.6}
+  .formula{text-align:center;color:var(--gold);font-style:italic;margin:22px auto 0;font-size:18px;opacity:.9}
+
+  .btn{
+    display:inline-block;cursor:pointer;border:none;font-family:var(--font);
+    background:linear-gradient(180deg,var(--gold),var(--gold-deep));
+    color:#231a05;font-size:19px;font-weight:bold;letter-spacing:.02em;
+    padding:16px 30px;border-radius:999px;
+    box-shadow:0 10px 26px rgba(244,201,93,.35);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(244,201,93,.5)}
+  .btn:active{transform:translateY(0)}
+  .btn.ghost{background:transparent;color:var(--gold);border:1.5px solid var(--line);
+    box-shadow:none}
+  .center{text-align:center;margin-top:34px}
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+    border:1px solid var(--line);border-radius:22px;padding:30px 26px;margin-top:18px;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);backdrop-filter:blur(4px);
+  }
+  .card h2{margin:0 0 6px;font-size:26px;color:var(--gold)}
+  .card p{color:var(--ink);line-height:1.65;font-size:17px}
+  .riddle{font-size:20px;line-height:1.7;font-style:italic;color:var(--ink);
+    border-left:3px solid var(--gold);padding-left:16px;margin:18px 0}
+
+  .answer-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+  input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{
+    font-family:var(--font);font-size:17px;color:var(--ink);
+    background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:12px;
+    padding:13px 14px;outline:none;width:100%;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+  #answer{max-width:160px;text-align:center;font-size:22px;letter-spacing:.1em}
+  .hint{color:var(--muted);font-size:15px;margin-top:14px;cursor:pointer;text-decoration:underline dotted}
+  .feedback{margin-top:14px;font-size:17px;min-height:24px}
+  .feedback.ok{color:var(--ok)}
+  .feedback.err{color:var(--err)}
+
+  /* ---------- Boarding pass ---------- */
+  .ticket{
+    position:relative;display:grid;grid-template-columns:1fr 132px;gap:0;
+    background:#fbf7ec;color:#1d2440;border-radius:18px;overflow:hidden;margin-top:8px;
+    box-shadow:0 24px 70px rgba(0,0,0,.5);
+  }
+  .ticket .main{padding:22px 24px}
+  .ticket .stub{
+    background:#10204f;color:#fbf7ec;padding:20px 14px;
+    border-left:2px dashed rgba(0,0,0,.25);
+    display:flex;flex-direction:column;justify-content:space-between;text-align:center;
+  }
+  .ticket .stub::before,.ticket .stub::after{
+    content:"";position:absolute;width:22px;height:22px;border-radius:50%;
+    background:var(--bg);right:121px;
+  }
+  .ticket .stub::before{top:-11px}
+  .ticket .stub::after{bottom:-11px}
+  .tk-row{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+  .tk-label{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#7180a8}
+  .tk-city{font-size:30px;font-weight:bold;line-height:1}
+  .tk-plane{font-size:22px;color:#10204f}
+  .tk-airline{font-size:13px;letter-spacing:.25em;text-transform:uppercase;color:#7180a8;margin-bottom:14px}
+  .tk-value{font-size:40px;font-weight:bold;color:#10204f}
+  .tk-meta{display:flex;gap:26px;margin-top:16px;flex-wrap:wrap}
+  .tk-meta div{font-size:14px}
+  .tk-meta b{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7180a8;margin-bottom:3px;font-weight:600}
+  .stub .big{font-size:34px;font-weight:bold;letter-spacing:.04em}
+  .barcode{height:46px;width:100%;margin-top:10px;
+    background:repeating-linear-gradient(90deg,#fbf7ec 0 2px,#10204f 2px 4px,#fbf7ec 4px 7px,#10204f 7px 8px)}
+
+  .note{color:var(--muted);font-size:16px;line-height:1.6;margin-top:18px;text-align:center}
+
+  /* ---------- Form ---------- */
+  .field{margin-top:16px}
+  .field label{display:block;font-size:14px;letter-spacing:.04em;color:var(--muted);margin-bottom:7px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:520px){.grid2{grid-template-columns:1fr}}
+  .small{font-size:14px;color:var(--muted);text-align:center;margin-top:18px}
+
+  /* confetti */
+  #confetti{position:fixed;inset:0;z-index:50;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="math-bg"></div>
+<canvas id="confetti"></canvas>
+
+<div class="wrap">
+
+  <!-- ============ STAGE 1 : LANDING ============ -->
+  <section id="stage-landing" class="stage active">
+    <div class="eyebrow">Happy Birthday, Mom</div>
+    <div class="sixty">60</div>
+    <h1>Sixty years of theorems, love &amp; the occasional proof by exhaustion</h1>
+    <p class="sub">
+      We couldn't be there to hand you a present in person — so we built you one.
+      But you're a mathematician, and we're not just going to <em>give</em> it to you.
+      First, a little riddle. 😉
+    </p>
+    <p class="formula">∑ (every year of you) = a constant we are endlessly grateful for</p>
+    <div class="center">
+      <button class="btn" onclick="go('riddle')">Begin the riddle →</button>
+    </div>
+  </section>
+
+  <!-- ============ STAGE 2 : RIDDLE ============ -->
+  <section id="stage-riddle" class="stage">
+    <div class="card">
+      <h2>The Riddle</h2>
+      <p>Solve it, and your gift unlocks. (We promise it's friendlier than a qualifying exam.)</p>
+      <div class="riddle">
+        “I am the smallest positive whole number divisible by
+        1, 2, 3, 4, 5 <em>and</em> 6.<br/>
+        I am also, as of today, exactly <em>you</em>.<br/>
+        What number am I?”
+      </div>
+      <div class="answer-row">
+        <input id="answer" type="text" inputmode="numeric" placeholder="?"
+               autocomplete="off" onkeydown="if(event.key==='Enter')checkAnswer()" />
+        <button class="btn" onclick="checkAnswer()">Check</button>
+      </div>
+      <div id="feedback" class="feedback"></div>
+      <div class="hint" onclick="showHint()">Need a hint?</div>
+    </div>
+  </section>
+
+  <!-- ============ STAGE 3 : REDEEM ============ -->
+  <section id="stage-redeem" class="stage">
+    <div class="card" style="text-align:center">
+      <h2>Riddle solved. 🎉</h2>
+      <p>Of course you got it. There's a gift waiting for you — go ahead and unwrap it.</p>
+      <div class="center">
+        <!-- Placeholder redeem button for the first iteration -->
+        <button class="btn" onclick="redeem()">🎁 Redeem your gift</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STAGE 4 : TICKET ============ -->
+  <section id="stage-ticket" class="stage">
+    <div class="card">
+      <h2>Your gift: a flight to come see us ✈️</h2>
+      <p>A <b>€200 travel voucher</b> toward a plane ticket — so the distance between us
+         gets a lot shorter, whenever <em>you</em> decide.</p>
+
+      <div class="ticket">
+        <div class="main">
+          <div class="tk-airline">Family Airlines · Boarding Pass</div>
+          <div class="tk-row">
+            <div>
+              <div class="tk-label">From</div>
+              <div class="tk-city">HOME</div>
+            </div>
+            <div class="tk-plane">✈</div>
+            <div style="text-align:right">
+              <div class="tk-label">To</div>
+              <div class="tk-city">US</div>
+            </div>
+          </div>
+          <div class="tk-meta">
+            <div><b>Passenger</b>The Birthday Mathematician</div>
+            <div><b>Date</b>Whenever you like</div>
+            <div><b>Class</b>VIP · Mom</div>
+          </div>
+          <div style="margin-top:18px">
+            <div class="tk-label">Voucher value</div>
+            <div class="tk-value">€200</div>
+          </div>
+          <div class="barcode"></div>
+        </div>
+        <div class="stub">
+          <div>
+            <div class="tk-label" style="color:#9fb0d8">Gift</div>
+            <div class="big">€200</div>
+          </div>
+          <div>
+            <div class="tk-label" style="color:#9fb0d8">Seat</div>
+            <div class="big">60A</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="note">
+        This voucher <b>never expires</b>. Save this link somewhere safe.
+        When you've found a flight you'd like, just tap the button below and fill in the
+        details — we'll take care of the actual booking. 💛
+      </p>
+      <div class="center">
+        <button class="btn" onclick="go('form')">I found a flight — let's book it →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STAGE 5 : FORM ============ -->
+  <section id="stage-form" class="stage">
+    <div class="card">
+      <h2>Tell us your flight</h2>
+      <p>Fill in what you've found and send it to us — we'll book it and forward you the
+         confirmation. Nothing here is final; if anything's unclear we'll just call you.</p>
+
+      <form id="bookForm" onsubmit="return submitForm(event)">
+        <div class="grid2">
+          <div class="field">
+            <label>From (city or airport)</label>
+            <input type="text" name="from" placeholder="e.g. Athens (ATH)" required />
+          </div>
+          <div class="field">
+            <label>To (city or airport)</label>
+            <input type="text" name="to" placeholder="e.g. Amsterdam (AMS)" required />
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>Departure date</label>
+            <input type="date" name="date" required />
+          </div>
+          <div class="field">
+            <label>Departure time (or preferred time of day)</label>
+            <input type="time" name="time" />
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>Airline / company</label>
+            <input type="text" name="airline" placeholder="e.g. KLM" required />
+          </div>
+          <div class="field">
+            <label>Return flight? (optional)</label>
+            <input type="text" name="return" placeholder="e.g. 12 July, evening" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Anything else we should know? (seat, baggage, flight number…)</label>
+          <textarea name="notes" rows="3" placeholder="Optional notes"></textarea>
+        </div>
+        <div class="center" style="margin-top:22px">
+          <button class="btn" type="submit">Send these details to us ✈️</button>
+        </div>
+        <p class="small">
+          This opens an email to us with everything filled in — just press send.
+          (We'll swap this for a one-tap form in the final version.)
+        </p>
+      </form>
+      <div id="formDone" class="feedback ok" style="text-align:center"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  /* ---- CONFIG (edit these later) ---- */
+  const RECIPIENT_EMAIL = "fl.anastasia.k@gmail.com"; // where the booking details are sent
+  const VOUCHER = "€200";
+
+  /* ---- floating math background ---- */
+  (function mathBg(){
+    const glyphs = ["∑","π","∞","√","∫","θ","Δ","λ","φ","≈","≠","60","∂","Ω","×","÷","α","β","e","i²","∇","≅"];
+    const box = document.getElementById("math-bg");
+    for(let k=0;k<26;k++){
+      const g=document.createElement("div");
+      g.className="glyph";
+      g.textContent=glyphs[Math.floor(Math.random()*glyphs.length)];
+      g.style.left=Math.random()*100+"vw";
+      g.style.fontSize=(22+Math.random()*46)+"px";
+      const dur=14+Math.random()*22;
+      g.style.animationDuration=dur+"s";
+      g.style.animationDelay=(-Math.random()*dur)+"s";
+      box.appendChild(g);
+    }
+  })();
+
+  /* ---- stage navigation ---- */
+  function go(name){
+    document.querySelectorAll(".stage").forEach(s=>s.classList.remove("active"));
+    document.getElementById("stage-"+name).classList.add("active");
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  /* ---- riddle ---- */
+  let tries=0;
+  function checkAnswer(){
+    const val=(document.getElementById("answer").value||"").trim().toLowerCase();
+    const fb=document.getElementById("feedback");
+    const accepted=["60","sixty","lx"]; // 60, the word, and the Roman numeral
+    if(accepted.includes(val)){
+      fb.className="feedback ok";
+      fb.textContent="Exactly. 60 — the smallest number divisible by 1 through 6. And the best age we know. ✨";
+      burst();
+      setTimeout(()=>go("redeem"),1300);
+    }else{
+      tries++;
+      fb.className="feedback err";
+      fb.textContent = tries<2
+        ? "Not quite — think about what 1,2,3,4,5,6 all divide into."
+        : "Close enough to keep trying — it's a special birthday number today. 🎂";
+    }
+  }
+  function showHint(){
+    const fb=document.getElementById("feedback");
+    fb.className="feedback";
+    fb.textContent="Hint: it's the least common multiple of 1,2,3,4,5,6 — and it's the candles on your cake today.";
+  }
+
+  /* ---- redeem ---- */
+  function redeem(){ burst(); setTimeout(()=>go("ticket"),700); }
+
+  /* ---- form -> email ---- */
+  function submitForm(e){
+    e.preventDefault();
+    const f=e.target;
+    const g=n=>(f.elements[n].value||"—");
+    const body=
+`Hi! Here are the flight details for my birthday voucher (${VOUCHER}):
+
+From:        ${g("from")}
+To:          ${g("to")}
+Date:        ${g("date")}
+Time:        ${g("time")}
+Airline:     ${g("airline")}
+Return:      ${g("return")}
+Notes:       ${g("notes")}
+
+Love, Mom`;
+    const subject="Mom's flight booking — 60th birthday voucher";
+    const mailto="mailto:"+encodeURIComponent(RECIPIENT_EMAIL)
+      +"?subject="+encodeURIComponent(subject)
+      +"&body="+encodeURIComponent(body);
+    window.location.href=mailto;
+    document.getElementById("formDone").textContent=
+      "Opening your email app… just press send and we'll handle the rest. 💛";
+    return false;
+  }
+
+  /* ---- confetti ---- */
+  function burst(){
+    const c=document.getElementById("confetti");
+    const ctx=c.getContext("2d");
+    c.width=innerWidth;c.height=innerHeight;
+    const cols=["#f4c95d","#5ad1c9","#ff8fb1","#ffffff","#7ee08a"];
+    const P=[];
+    for(let i=0;i<160;i++){
+      P.push({x:innerWidth/2,y:innerHeight/3,
+        vx:(Math.random()-.5)*12,vy:Math.random()*-14-4,
+        g:.35+Math.random()*.2,s:5+Math.random()*7,
+        col:cols[i%cols.length],rot:Math.random()*6,vr:(Math.random()-.5)*.4,life:0});
+    }
+    let frame=0;
+    (function anim(){
+      ctx.clearRect(0,0,c.width,c.height);
+      frame++;
+      P.forEach(p=>{
+        p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;
+        ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);
+        ctx.fillStyle=p.col;ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);ctx.restore();
+      });
+      if(frame<150)requestAnimationFrame(anim);
+      else ctx.clearRect(0,0,c.width,c.height);
+    })();
+  }
+</script>
+</body>
+</html>
