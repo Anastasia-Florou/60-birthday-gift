@@ -158,6 +158,14 @@
 
   /* confetti */
   #confetti{position:fixed;inset:0;z-index:50;pointer-events:none}
+
+  /* ---------- Back button ---------- */
+  .back-btn{
+    display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:none;
+    background:transparent;color:var(--muted);font-family:var(--font);font-size:15px;
+    padding:8px 0;margin-bottom:6px;transition:color .15s;
+  }
+  .back-btn:hover{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -182,6 +190,7 @@
 
   <!-- ============ STAGE 2 : RIDDLE ============ -->
   <section id="stage-riddle" class="stage">
+    <button class="back-btn" onclick="goBack()">← Πίσω</button>
     <div class="card">
       <h2>Ο Γρίφος</h2>
       <p>Νόμιζες θα ήταν τόσο εύκολο; Πρώτα πρέπει να λύσεις τα παρακάτω.
@@ -214,6 +223,7 @@
 
   <!-- ============ STAGE 3 : REDEEM ============ -->
   <section id="stage-redeem" class="stage">
+    <button class="back-btn" onclick="goBack()">← Πίσω</button>
     <div class="card" style="text-align:center">
       <h2>Ο γρίφος λύθηκε. 🎉</h2>
       <p>Φυσικά και τον έλυσες. Σε περιμένει το δώρο σου.</p>
@@ -225,6 +235,7 @@
 
   <!-- ============ STAGE 4 : TICKET ============ -->
   <section id="stage-ticket" class="stage">
+    <button class="back-btn" onclick="goBack()">← Πίσω</button>
     <div class="card">
       <h2>Το δώρο σου: μια πτήση για να έρθεις να μας δεις ✈️</h2>
       <p>Ένα voucher <b>200€</b> για αεροπορικό εισιτήριο, για να το εξαργυρώσεις όποτε θες.</p>
@@ -279,6 +290,7 @@
 
   <!-- ============ STAGE 5 : FORM ============ -->
   <section id="stage-form" class="stage">
+    <button class="back-btn" onclick="goBack()">← Πίσω</button>
     <div class="card">
       <h2>Στείλε μας τα στοιχεία</h2>
       <p>Συμπλήρωσε ό,τι έχεις βρει. Δεν είναι τίποτα οριστικό — αν χρειαστεί κάτι θα σε πάρουμε τηλέφωνο.</p>
@@ -333,7 +345,7 @@
           <button class="btn" type="submit">Στείλε μας τα στοιχεία ✈️</button>
         </div>
         <p class="small">
-          Θα ανοίξει η εφαρμογή email σου με συμπληρωμένα τα στοιχεία — απλώς πάτα αποστολή.
+          Πάτα αποστολή και τα στοιχεία θα φτάσουν κατευθείαν σε εμάς.
         </p>
       </form>
       <div id="formDone" class="feedback ok" style="text-align:center"></div>
@@ -344,7 +356,7 @@
 
 <script>
   /* ---- CONFIG ---- */
-  const RECIPIENT_EMAIL = "fl.anastasia.k@gmail.com";
+  const FORMSPREE_URL = "PASTE_YOUR_FORMSPREE_URL_HERE"; // e.g. https://formspree.io/f/xyzabc
   const VOUCHER = "€200";
 
   /* ---- floating math background ---- */
@@ -365,9 +377,19 @@
   })();
 
   /* ---- stage navigation ---- */
+  const history = ["landing"];
   function go(name){
+    history.push(name);
     document.querySelectorAll(".stage").forEach(s=>s.classList.remove("active"));
     document.getElementById("stage-"+name).classList.add("active");
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  function goBack(){
+    if(history.length <= 1) return;
+    history.pop();
+    const prev = history[history.length - 1];
+    document.querySelectorAll(".stage").forEach(s=>s.classList.remove("active"));
+    document.getElementById("stage-"+prev).classList.add("active");
     window.scrollTo({top:0,behavior:"smooth"});
   }
 
@@ -402,36 +424,48 @@
   /* ---- redeem ---- */
   function redeem(){ burst(); setTimeout(()=>go("ticket"),700); }
 
-  /* ---- form → email ---- */
-  function submitForm(e){
+  /* ---- form → Formspree ---- */
+  async function submitForm(e){
     e.preventDefault();
     const f=e.target;
     const g=n=>(f.elements[n].value||"—");
-    const body=
-`Γεια σας! Εδώ είναι τα στοιχεία της πτήσης για το δώρο μου (${VOUCHER}):
+    const btn=f.querySelector("button[type=submit]");
+    const done=document.getElementById("formDone");
 
-ΑΝΑΧΩΡΗΣΗ
-Από:              ${g("from")}
-Προς:             ${g("to")}
-Ημερομηνία:       ${g("date")}
-Ώρα:              ${g("time")}
-Αεροπορική:       ${g("airline")}
+    btn.disabled=true;
+    btn.textContent="Αποστολή…";
 
-ΕΠΙΣΤΡΟΦΗ
-Ημερομηνία:       ${g("return-date")}
-Ώρα:              ${g("return-time")}
-Αεροπορική:       ${g("return-airline")}
+    const payload={
+      voucher: VOUCHER,
+      "Από": g("from"),
+      "Προς": g("to"),
+      "Ημερομηνία αναχώρησης": g("date"),
+      "Ώρα αναχώρησης": g("time"),
+      "Αεροπορική": g("airline"),
+      "Ημερομηνία επιστροφής": g("return-date"),
+      "Ώρα επιστροφής": g("return-time"),
+      "Αεροπορική επιστροφής": g("return-airline"),
+      "Σχόλια": g("notes"),
+    };
 
-Σχόλια:           ${g("notes")}
-
-Σας αγαπώ, Μαμά`;
-    const subject="Κράτηση πτήσης — δώρο γενεθλίων 60ών";
-    const mailto="mailto:"+encodeURIComponent(RECIPIENT_EMAIL)
-      +"?subject="+encodeURIComponent(subject)
-      +"&body="+encodeURIComponent(body);
-    window.location.href=mailto;
-    document.getElementById("formDone").textContent=
-      "Ανοίγει το email σου… απλώς πάτα αποστολή και θα τα αναλάβουμε εμείς. 💛";
+    try{
+      const res = await fetch(FORMSPREE_URL, {
+        method:"POST",
+        headers:{"Content-Type":"application/json","Accept":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      if(res.ok){
+        f.style.display="none";
+        done.textContent="Στάλθηκε! Θα σας πάρουμε τηλέφωνο για να επιβεβαιώσουμε. 💛";
+      } else {
+        throw new Error();
+      }
+    } catch {
+      btn.disabled=false;
+      btn.textContent="Στείλε μας τα στοιχεία ✈️";
+      done.className="feedback err";
+      done.textContent="Κάτι πήγε στραβά — δοκίμασε ξανά.";
+    }
     return false;
   }
 
