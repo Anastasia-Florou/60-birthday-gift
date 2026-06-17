@@ -226,9 +226,10 @@
     <button class="back-btn" onclick="goBack()">← Πίσω</button>
     <div class="card" style="text-align:center">
       <h2>Ο γρίφος λύθηκε. 🎉</h2>
-      <p>Φυσικά και τον έλυσες. Σε περιμένει το δώρο σου.</p>
+      <p id="cake-msg">Φυσικά και τον έλυσες. Να τα 60 σου κεριά...</p>
+      <canvas id="cake-canvas" style="display:block;margin:14px auto;border-radius:50%"></canvas>
       <div class="center">
-        <button class="btn" onclick="redeem()">🎁 Εξαργύρωσε το δώρο σου</button>
+        <button class="btn" id="redeem-btn" onclick="blowAndRedeem()" style="opacity:0;transition:opacity .5s">🎁 Εξαργύρωσε το δώρο σου</button>
       </div>
     </div>
   </section>
@@ -278,7 +279,7 @@
       </div>
 
       <p class="note">
-        Το voucher <b>δεν λήγει ποτέ</b>. Αποθήκευσε αυτόν τον σύνδεσμο κάπου βολικό.
+        Το voucher <b>δεν λήγει ποτέ</b>. Αποθήκευσε αυτόν τον σύνδεσμο κάπου βολικά.
         Όταν βρεις πτήση που σε ενδιαφέρει, πάτα το παρακάτω κουμπί και συμπλήρωσε τα στοιχεία —
         εμείς αναλαμβάνουμε την κράτηση. 💛
       </p>
@@ -361,9 +362,9 @@
 
   /* ---- floating math background ---- */
   (function mathBg(){
-    const glyphs = ["∑","π","∞","√","∫","θ","Δ","λ","φ","≈","≠","60","∂","Ω","×","÷","α","β","e","i²","∇","≅","α²","∈","⊂"];
+    const glyphs = ["∑","π","∞","√","∫","θ","Δ","λ","φ","≈","≠","60","∂","Ω","×","÷","α","β","e","i²","∇","≅","α²","∈","⊂","lim","∮","d/dx","∀","∃"];
     const box = document.getElementById("math-bg");
-    for(let k=0;k<26;k++){
+    for(let k=0;k<29;k++){
       const g=document.createElement("div");
       g.className="glyph";
       g.textContent=glyphs[Math.floor(Math.random()*glyphs.length)];
@@ -406,7 +407,7 @@
       fb.className="feedback ok";
       fb.textContent="Σωστά! α = 6, β = 10, άρα α · β = 60. ✨";
       burst();
-      setTimeout(()=>go("redeem"),1500);
+      setTimeout(()=>{ go("redeem"); startCakeAnimation(); },1500);
     }else{
       tries++;
       fb.className="feedback err";
@@ -421,8 +422,121 @@
     fb.textContent="Υπόδειξη: Χρησιμοποίησε log(a) + log(b) = log(a·b) στο πρώτο ερώτημα, κι έπειτα παραγοντοποίησε.";
   }
 
-  /* ---- redeem ---- */
-  function redeem(){ burst(); setTimeout(()=>go("ticket"),700); }
+  /* ---- cake animation ---- */
+  const CANDLE_COLS = ["#ff6b6b","#ffd93d","#6bcb77","#4d96ff","#ff8fab","#c77dff","#ff9a3c","#00c9a7"];
+  let cakeCtx, cakeCandles=[], cakeAnimId, cakeAddId, cakeTime=0;
+
+  function buildCandlePositions(){
+    const rings=[{n:10,r:30},{n:20,r:62},{n:30,r:97}];
+    const out=[];
+    rings.forEach(({n,r})=>{
+      for(let i=0;i<n;i++){
+        const a=(i/n)*Math.PI*2-Math.PI/2;
+        const cx=150+Math.cos(a)*r, cy=150+Math.sin(a)*r;
+        out.push({x:cx,y:cy,lit:false,out:false,smoke:0,col:CANDLE_COLS[out.length%CANDLE_COLS.length]});
+      }
+    });
+    return out;
+  }
+
+  function drawCakeFrame(){
+    const c=cakeCtx, S=300;
+    c.clearRect(0,0,S,S);
+
+    // cake base
+    c.beginPath(); c.arc(150,150,138,0,Math.PI*2);
+    c.fillStyle="#f9e4b7"; c.fill();
+
+    // outer ring
+    c.beginPath(); c.arc(150,150,138,0,Math.PI*2);
+    c.strokeStyle="#d4a85a"; c.lineWidth=5; c.stroke();
+
+    // icing ring
+    c.beginPath(); c.arc(150,150,120,0,Math.PI*2);
+    c.strokeStyle="rgba(255,255,255,0.55)"; c.lineWidth=10; c.stroke();
+
+    // decorative dots on icing ring
+    for(let i=0;i<18;i++){
+      const a=(i/18)*Math.PI*2;
+      c.beginPath(); c.arc(150+Math.cos(a)*120,150+Math.sin(a)*120,4,0,Math.PI*2);
+      c.fillStyle=i%3===0?"#f48fb1":i%3===1?"#80cbc4":"#fff176"; c.fill();
+    }
+
+    // candles
+    cakeCandles.forEach(cd=>{
+      if(!cd.lit && !cd.out) return;
+
+      // body
+      c.beginPath(); c.arc(cd.x,cd.y,4.5,0,Math.PI*2);
+      c.fillStyle=cd.col; c.fill();
+      c.strokeStyle="rgba(0,0,0,.15)"; c.lineWidth=1; c.stroke();
+
+      if(!cd.out){
+        // flame flicker offset
+        const flick=Math.sin(cakeTime*0.004+cd.x*0.3)*1.2;
+        const fx=cd.x+flick, fy=cd.y-11;
+
+        // glow halo
+        const grd=c.createRadialGradient(fx,fy,0,fx,fy,7);
+        grd.addColorStop(0,"rgba(255,240,80,.9)");
+        grd.addColorStop(.5,"rgba(255,140,0,.5)");
+        grd.addColorStop(1,"rgba(255,80,0,0)");
+        c.beginPath(); c.arc(fx,fy,7,0,Math.PI*2);
+        c.fillStyle=grd; c.fill();
+
+        // flame core
+        c.beginPath(); c.arc(fx,fy+1,2,0,Math.PI*2);
+        c.fillStyle="#fffde7"; c.fill();
+      } else if(cd.smoke<1){
+        cd.smoke=Math.min(1,cd.smoke+0.04);
+        c.beginPath();
+        c.arc(cd.x,cd.y-10-cd.smoke*8,3*cd.smoke,0,Math.PI*2);
+        c.fillStyle=`rgba(180,180,180,${0.5*(1-cd.smoke)})`; c.fill();
+      }
+    });
+  }
+
+  function cakeTick(){
+    cakeTime+=16;
+    drawCakeFrame();
+    cakeAnimId=requestAnimationFrame(cakeTick);
+  }
+
+  function startCakeAnimation(){
+    const canvas=document.getElementById("cake-canvas");
+    canvas.width=300; canvas.height=300;
+    cakeCtx=canvas.getContext("2d");
+    cakeCandles=buildCandlePositions();
+    cakeTime=0;
+    document.getElementById("redeem-btn").style.opacity="0";
+    cakeTick();
+    let i=0;
+    cakeAddId=setInterval(()=>{
+      if(i<cakeCandles.length){ cakeCandles[i].lit=true; i++; }
+      else{
+        clearInterval(cakeAddId);
+        // show button after all candles lit
+        document.getElementById("redeem-btn").style.opacity="1";
+      }
+    },55); // 55ms × 60 = 3.3s
+  }
+
+  function blowAndRedeem(){
+    document.getElementById("redeem-btn").disabled=true;
+    document.getElementById("cake-msg").textContent="Φύσα τα κεριά! 🎂";
+    let i=0;
+    const blowId=setInterval(()=>{
+      if(i<cakeCandles.length){ cakeCandles[i].out=true; cakeCandles[i].lit=false; i++; }
+      else{
+        clearInterval(blowId);
+        setTimeout(()=>{
+          cancelAnimationFrame(cakeAnimId);
+          burst();
+          setTimeout(()=>go("ticket"),700);
+        },700);
+      }
+    },28); // 28ms × 60 = ~1.7s
+  }
 
   /* ---- form → Formspree ---- */
   async function submitForm(e){
