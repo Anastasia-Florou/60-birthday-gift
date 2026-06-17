@@ -159,13 +159,15 @@
   /* confetti */
   #confetti{position:fixed;inset:0;z-index:50;pointer-events:none}
 
-  /* ---------- Back button ---------- */
-  .back-btn{
+  /* ---------- Back / Forward buttons ---------- */
+  .nav-row{display:flex;justify-content:space-between;align-items:center;min-height:38px;margin-bottom:6px}
+  .back-btn,.fwd-btn{
     display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:none;
     background:transparent;color:var(--muted);font-family:var(--font);font-size:15px;
-    padding:8px 0;margin-bottom:6px;transition:color .15s;
+    padding:8px 0;transition:color .15s;
   }
-  .back-btn:hover{color:var(--ink)}
+  .back-btn:hover,.fwd-btn:hover{color:var(--ink)}
+  .fwd-btn{display:none}
 </style>
 </head>
 <body>
@@ -190,7 +192,10 @@
 
   <!-- ============ STAGE 2 : RIDDLE ============ -->
   <section id="stage-riddle" class="stage">
-    <button class="back-btn" onclick="goBack()">← Πίσω</button>
+    <div class="nav-row">
+      <button class="back-btn" onclick="goBack()">← Πίσω</button>
+      <button class="fwd-btn" id="fwd-riddle" onclick="goForward()">Μπροστά →</button>
+    </div>
     <div class="card">
       <h2>Ο Γρίφος</h2>
       <p>Νόμιζες θα ήταν τόσο εύκολο; Πρώτα πρέπει να λύσεις τα παρακάτω.
@@ -223,7 +228,10 @@
 
   <!-- ============ STAGE 3 : REDEEM ============ -->
   <section id="stage-redeem" class="stage">
-    <button class="back-btn" onclick="goBack()">← Πίσω</button>
+    <div class="nav-row">
+      <button class="back-btn" onclick="goBack()">← Πίσω</button>
+      <button class="fwd-btn" id="fwd-redeem" onclick="goForward()">Μπροστά →</button>
+    </div>
     <div class="card" style="text-align:center">
       <h2>Ο γρίφος λύθηκε. 🎉</h2>
       <p id="cake-msg">Φυσικά και τον έλυσες. Να τα 60 σου κεριά...</p>
@@ -236,7 +244,10 @@
 
   <!-- ============ STAGE 4 : TICKET ============ -->
   <section id="stage-ticket" class="stage">
-    <button class="back-btn" onclick="goBack()">← Πίσω</button>
+    <div class="nav-row">
+      <button class="back-btn" onclick="goBack()">← Πίσω</button>
+      <button class="fwd-btn" id="fwd-ticket" onclick="goForward()">Μπροστά →</button>
+    </div>
     <div class="card">
       <h2>Το δώρο σου: μια πτήση για να έρθεις να μας δεις ✈️</h2>
       <p>Ένα voucher <b>200€</b> για αεροπορικό εισιτήριο, για να το εξαργυρώσεις όποτε θες.</p>
@@ -291,7 +302,9 @@
 
   <!-- ============ STAGE 5 : FORM ============ -->
   <section id="stage-form" class="stage">
-    <button class="back-btn" onclick="goBack()">← Πίσω</button>
+    <div class="nav-row">
+      <button class="back-btn" onclick="goBack()">← Πίσω</button>
+    </div>
     <div class="card">
       <h2>Στείλε μας τα στοιχεία</h2>
       <p>Συμπλήρωσε ό,τι έχεις βρει. Δεν είναι τίποτα οριστικό — αν χρειαστεί κάτι θα σε πάρουμε τηλέφωνο.</p>
@@ -378,20 +391,38 @@
   })();
 
   /* ---- stage navigation ---- */
-  const history = ["landing"];
-  function go(name){
-    history.push(name);
+  const STAGES = ["landing","riddle","redeem","ticket","form"];
+  const navHistory = ["landing"];
+  let maxStageIdx = 0;
+
+  function showStage(name){
+    stopCakeAnimation();
     document.querySelectorAll(".stage").forEach(s=>s.classList.remove("active"));
     document.getElementById("stage-"+name).classList.add("active");
+    const idx = STAGES.indexOf(name);
+    if(idx > maxStageIdx) maxStageIdx = idx;
+    if(name === "redeem") startCakeAnimation();
+    updateFwdButtons();
     window.scrollTo({top:0,behavior:"smooth"});
   }
+  function go(name){
+    navHistory.push(name);
+    showStage(name);
+  }
   function goBack(){
-    if(history.length <= 1) return;
-    history.pop();
-    const prev = history[history.length - 1];
-    document.querySelectorAll(".stage").forEach(s=>s.classList.remove("active"));
-    document.getElementById("stage-"+prev).classList.add("active");
-    window.scrollTo({top:0,behavior:"smooth"});
+    if(navHistory.length <= 1) return;
+    navHistory.pop();
+    showStage(navHistory[navHistory.length-1]);
+  }
+  function goForward(){
+    const curIdx = STAGES.indexOf(navHistory[navHistory.length-1]);
+    if(curIdx < maxStageIdx) go(STAGES[curIdx+1]);
+  }
+  function updateFwdButtons(){
+    const curIdx = STAGES.indexOf(navHistory[navHistory.length-1]);
+    document.querySelectorAll(".fwd-btn").forEach(btn=>{
+      btn.style.display = curIdx < maxStageIdx ? "inline-flex" : "none";
+    });
   }
 
   /* ---- riddle logic ----
@@ -424,7 +455,16 @@
 
   /* ---- cake animation ---- */
   const CANDLE_COLS = ["#ff6b6b","#ffd93d","#6bcb77","#4d96ff","#ff8fab","#c77dff","#ff9a3c","#00c9a7"];
-  let cakeCtx, cakeCandles=[], cakeAnimId, cakeAddId, cakeTime=0;
+  let cakeCtx, cakeCandles=[], cakeAnimId=null, cakeAddId=null, cakeTime=0;
+
+  function stopCakeAnimation(){
+    if(cakeAnimId){ cancelAnimationFrame(cakeAnimId); cakeAnimId=null; }
+    if(cakeAddId){ clearInterval(cakeAddId); cakeAddId=null; }
+    const btn=document.getElementById("redeem-btn");
+    if(btn){ btn.disabled=false; btn.style.opacity="0"; }
+    const msg=document.getElementById("cake-msg");
+    if(msg) msg.textContent="Φυσικά και τον έλυσες. Να τα 60 σου κεριά...";
+  }
 
   function buildCandlePositions(){
     const rings=[{n:10,r:30},{n:20,r:62},{n:30,r:97}];
