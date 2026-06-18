@@ -457,9 +457,9 @@
   const CANDLE_COLS = ["#ff6b6b","#ffd93d","#6bcb77","#4d96ff","#ff8fab","#c77dff","#ff9a3c","#00c9a7"];
   let cakeCtx, cakeCandles=[], cakeDrips=[], cakeAnimId=null, cakeAddId=null, cakeTime=0;
 
-  // Cake geometry — front perspective (low camera, flat top ellipse)
-  const CK={cx:170, topY:70, botY:252, rx:126, ry:14,
-             creamTop:160, creamBot:182}; // one visible cream layer
+  // Cake geometry — front perspective, moderate viewing angle
+  const CK={cx:170, topY:68, botY:250, rx:124, ry:20,
+             creamTop:158, creamBot:180};
 
   function stopCakeAnimation(){
     if(cakeAnimId){ cancelAnimationFrame(cakeAnimId); cakeAnimId=null; }
@@ -472,7 +472,7 @@
 
   function buildCandlePositions(){
     // Flat rings on perspective top: topRy matches CK.ry
-    const rings=[{n:10,rx:22,ry:4},{n:20,rx:48,ry:8},{n:30,rx:78,ry:12}];
+    const rings=[{n:10,rx:22,ry:6},{n:20,rx:48,ry:13},{n:30,rx:78,ry:19}];
     const out=[];
     rings.forEach(({n,rx,ry})=>{
       for(let i=0;i<n;i++){
@@ -533,17 +533,16 @@
     creamGrad.addColorStop(0.85,'#f5f0e6');
     creamGrad.addColorStop(1,'#c8c0ac');
 
-    // ── Plate ──
+    // ── Plate fill ONLY (stroke drawn last, after candles) ──
     c.beginPath(); c.ellipse(cx,botY+16,rx+22,ry+7,0,0,Math.PI*2);
     c.fillStyle='#b8dce8'; c.fill();
-    c.strokeStyle='#2a3a6a'; c.lineWidth=2.5; c.stroke();
 
-    // ── Cake bands (bottom → top so each covers the previous back-arc) ──
-    fillBand(creamBot,botY,spongeGrad);   // lower sponge
-    fillBand(creamTop,creamBot,creamGrad); // cream layer
-    fillBand(topY,creamTop,spongeGrad);   // upper sponge
+    // ── Cake bands (bottom → top) ──
+    fillBand(creamBot,botY,spongeGrad);
+    fillBand(creamTop,creamBot,creamGrad);
+    fillBand(topY,creamTop,spongeGrad);
 
-    // ── Outer outline — sides + bottom arc (no top, that's drawn later) ──
+    // ── Outer outline — sides + bottom arc ──
     c.beginPath();
     c.moveTo(cx-rx,topY); c.lineTo(cx-rx,botY);
     c.ellipse(cx,botY,rx,ry,0,Math.PI,0);
@@ -552,31 +551,40 @@
 
     // ── Cream divider lines (front arc only) ──
     [creamTop,creamBot].forEach(y=>{
-      c.beginPath(); c.ellipse(cx,y,rx,ry,0,0,Math.PI); // front half
+      c.beginPath(); c.ellipse(cx,y,rx,ry,0,0,Math.PI);
       c.strokeStyle='#2a3a6a'; c.lineWidth=2.2; c.stroke();
     });
 
-    // ── Caramel drips from top ──
+    // ── White drips from top ──
     cakeDrips.forEach(({x,y,h})=>{
       c.beginPath();
       c.moveTo(x-5,y);
       c.bezierCurveTo(x-5,y+h*.6,x-2,y+h,x,y+h+3);
       c.bezierCurveTo(x+2,y+h,x+5,y+h*.6,x+5,y);
       c.closePath();
-      c.fillStyle='#d4a030'; c.fill();
+      c.fillStyle='#f5f0e8'; c.fill();
       c.strokeStyle='#2a3a6a'; c.lineWidth=1; c.stroke();
     });
 
-    // ── Top surface (caramel glaze) ──
+    // ── Top surface (white frosting) ──
     c.beginPath(); c.ellipse(cx,topY,rx,ry,0,0,Math.PI*2);
-    c.fillStyle='#d4a030'; c.fill();
+    c.fillStyle='#f5f0e8'; c.fill();
     c.strokeStyle='#2a3a6a'; c.lineWidth=2.8; c.stroke();
+
+    // ── Frosting blob ring around top edge ──
+    for(let i=0;i<18;i++){
+      const a=(i/18)*Math.PI*2;
+      c.beginPath();
+      c.arc(cx+Math.cos(a)*(rx-5), topY+Math.sin(a)*(ry-2), 5,0,Math.PI*2);
+      c.fillStyle='#fff'; c.fill();
+      c.strokeStyle='#2a3a6a'; c.lineWidth=0.8; c.stroke();
+    }
 
     // Small coloured dots on top surface
     for(let i=0;i<12;i++){
       const a=(i/12)*Math.PI*2;
       c.beginPath();
-      c.arc(cx+Math.cos(a)*(rx-18), topY+Math.sin(a)*(ry-3), 3,0,Math.PI*2);
+      c.arc(cx+Math.cos(a)*(rx-20), topY+Math.sin(a)*(ry-4), 3,0,Math.PI*2);
       c.fillStyle=CANDLE_COLS[i%CANDLE_COLS.length]; c.fill();
       c.strokeStyle='#2a3a6a'; c.lineWidth=0.8; c.stroke();
     }
@@ -587,30 +595,24 @@
       const {ex:x,ey:y}=cd;
       const cw=4, ch=20;
 
-      // Body
       c.fillStyle=cd.col;
       c.fillRect(x-cw/2,y-ch,cw,ch);
-      // Highlight
       c.fillStyle='rgba(255,255,255,.28)';
       c.fillRect(x-cw/2+0.5,y-ch,1.5,ch);
-      // Thin outline
       c.strokeStyle='rgba(0,0,0,.22)'; c.lineWidth=0.6;
       c.strokeRect(x-cw/2,y-ch,cw,ch);
-      // Wax top
       c.beginPath(); c.ellipse(x,y-ch,cw/2,1.5,0,0,Math.PI*2);
       c.fillStyle='#fff'; c.fill();
 
       if(!cd.out){
         const flick=Math.sin(cakeTime*0.004+x*0.28)*1.2;
         const fx=x+flick*0.35, fy=y-ch-9;
-        // Glow
         const grd=c.createRadialGradient(fx,fy+2,0,fx,fy+2,8);
         grd.addColorStop(0,'rgba(255,245,90,.95)');
         grd.addColorStop(.4,'rgba(255,140,0,.6)');
         grd.addColorStop(1,'rgba(255,60,0,0)');
         c.beginPath(); c.ellipse(fx,fy+2,4,7,0,0,Math.PI*2);
         c.fillStyle=grd; c.fill();
-        // Core
         c.beginPath(); c.ellipse(fx,fy+3,1.5,2.5,0,0,Math.PI*2);
         c.fillStyle='#fffde7'; c.fill();
       } else if(cd.smoke<1){
@@ -620,6 +622,11 @@
         c.fillStyle=`rgba(160,160,160,${0.45*(1-cd.smoke)})`; c.fill();
       }
     });
+
+    // ── Plate front arc stroke (drawn last so it appears in front of cake) ──
+    c.beginPath();
+    c.ellipse(cx,botY+16,rx+22,ry+7,0,0,Math.PI);
+    c.strokeStyle='#2a3a6a'; c.lineWidth=2.5; c.stroke();
   }
 
   function cakeTick(){
