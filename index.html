@@ -472,7 +472,7 @@
 
   function buildCandlePositions(){
     // Flat rings on perspective top: topRy matches CK.ry
-    const rings=[{n:10,rx:22,ry:6},{n:20,rx:48,ry:13},{n:30,rx:78,ry:19}];
+    const rings=[{n:10,rx:22,ry:4},{n:20,rx:48,ry:8},{n:30,rx:78,ry:13}];
     const out=[];
     rings.forEach(({n,rx,ry})=>{
       for(let i=0;i<n;i++){
@@ -534,7 +534,7 @@
     creamGrad.addColorStop(1,'#c8c0ac');
 
     // Plate geometry — flat ellipse so the view reads from slightly above
-    const plateY=botY+12, plateRx=rx+22, plateRy=8;
+    const plateY=botY+20, plateRx=rx+24, plateRy=9;
 
     // ── Plate fill ONLY (front rim stroke drawn last, after candles) ──
     c.beginPath(); c.ellipse(cx,plateY,plateRx,plateRy,0,0,Math.PI*2);
