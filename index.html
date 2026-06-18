@@ -512,7 +512,7 @@
       c.beginPath();
       c.moveTo(cx-rx,y1);
       c.lineTo(cx-rx,y2);
-      c.ellipse(cx,y2,rx,ry,0,Math.PI,0);     // front arc at bottom of band
+      c.ellipse(cx,y2,rx,ry,0,Math.PI,0,true); // front arc at bottom (curves down)
       c.lineTo(cx+rx,y1);
       c.ellipse(cx,y1,rx,ry,0,0,Math.PI,true); // back arc at top of band
       c.closePath();
@@ -555,7 +555,7 @@
     // ── Outer outline — sides + bottom arc ──
     c.beginPath();
     c.moveTo(cx-rx,topY); c.lineTo(cx-rx,botY);
-    c.ellipse(cx,botY,rx,ry,0,Math.PI,0);
+    c.ellipse(cx,botY,rx,ry,0,Math.PI,0,true);
     c.lineTo(cx+rx,topY);
     c.strokeStyle='#2a3a6a'; c.lineWidth=2.8; c.stroke();
 
