@@ -534,7 +534,7 @@
     creamGrad.addColorStop(1,'#c8c0ac');
 
     // Plate geometry — flat ellipse so the view reads from slightly above
-    const plateY=botY+20, plateRx=rx+24, plateRy=9;
+    const plateY=botY, plateRx=rx+22, plateRy=ry*(rx+22)/rx;
 
     // ── Plate fill ONLY (front rim stroke drawn last, after candles) ──
     c.beginPath(); c.ellipse(cx,plateY,plateRx,plateRy,0,0,Math.PI*2);
@@ -661,7 +661,7 @@
     document.getElementById("cake-msg").textContent="Φύσα τα κεριά! 🎂";
     let i=0;
     const blowId=setInterval(()=>{
-      if(i<cakeCandles.length){ cakeCandles[i].out=true; cakeCandles[i].lit=false; i++; }
+      if(i<cakeCandles.length){ const cd=cakeCandles[cakeCandles.length-1-i]; cd.out=true; cd.lit=false; i++; }
       else{
         clearInterval(blowId);
         setTimeout(()=>{
