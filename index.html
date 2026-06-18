@@ -533,14 +533,24 @@
     creamGrad.addColorStop(0.85,'#f5f0e6');
     creamGrad.addColorStop(1,'#c8c0ac');
 
-    // ── Plate fill ONLY (stroke drawn last, after candles) ──
-    c.beginPath(); c.ellipse(cx,botY+16,rx+22,ry+7,0,0,Math.PI*2);
+    // Plate geometry — flat ellipse so the view reads from slightly above
+    const plateY=botY+12, plateRx=rx+22, plateRy=8;
+
+    // ── Plate fill ONLY (front rim stroke drawn last, after candles) ──
+    c.beginPath(); c.ellipse(cx,plateY,plateRx,plateRy,0,0,Math.PI*2);
     c.fillStyle='#b8dce8'; c.fill();
 
-    // ── Cake bands (bottom → top) ──
-    fillBand(creamBot,botY,spongeGrad);
-    fillBand(creamTop,creamBot,creamGrad);
-    fillBand(topY,creamTop,spongeGrad);
+    // ── Solid cake body (sponge silhouette, covers plate back) ──
+    fillBand(topY,botY,spongeGrad);
+
+    // ── Cream layer (front-facing strip only, both edges curve down) ──
+    c.beginPath();
+    c.moveTo(cx-rx,creamTop);
+    c.ellipse(cx,creamTop,rx,ry,0,Math.PI,0,true);   // smile at top
+    c.lineTo(cx+rx,creamBot);
+    c.ellipse(cx,creamBot,rx,ry,0,0,Math.PI,false);  // smile at bottom
+    c.closePath();
+    c.fillStyle=creamGrad; c.fill();
 
     // ── Outer outline — sides + bottom arc ──
     c.beginPath();
@@ -570,15 +580,6 @@
     c.beginPath(); c.ellipse(cx,topY,rx,ry,0,0,Math.PI*2);
     c.fillStyle='#f5f0e8'; c.fill();
     c.strokeStyle='#2a3a6a'; c.lineWidth=2.8; c.stroke();
-
-    // ── Frosting blob ring around top edge ──
-    for(let i=0;i<18;i++){
-      const a=(i/18)*Math.PI*2;
-      c.beginPath();
-      c.arc(cx+Math.cos(a)*(rx-5), topY+Math.sin(a)*(ry-2), 5,0,Math.PI*2);
-      c.fillStyle='#fff'; c.fill();
-      c.strokeStyle='#2a3a6a'; c.lineWidth=0.8; c.stroke();
-    }
 
     // Small coloured dots on top surface
     for(let i=0;i<12;i++){
@@ -625,7 +626,7 @@
 
     // ── Plate front arc stroke (drawn last so it appears in front of cake) ──
     c.beginPath();
-    c.ellipse(cx,botY+16,rx+22,ry+7,0,0,Math.PI);
+    c.ellipse(cx,plateY,plateRx,plateRy,0,0,Math.PI);
     c.strokeStyle='#2a3a6a'; c.lineWidth=2.5; c.stroke();
   }
 
