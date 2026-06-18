@@ -455,7 +455,10 @@
 
   /* ---- cake animation ---- */
   const CANDLE_COLS = ["#ff6b6b","#ffd93d","#6bcb77","#4d96ff","#ff8fab","#c77dff","#ff9a3c","#00c9a7"];
-  let cakeCtx, cakeCandles=[], cakeAnimId=null, cakeAddId=null, cakeTime=0;
+  let cakeCtx, cakeCandles=[], cakeDrips=[], cakeAnimId=null, cakeAddId=null, cakeTime=0;
+
+  // Cake geometry constants (perspective front view)
+  const CK={cx:170,topY:88,botY:228,rx:122,topRy:28,botRy:28};
 
   function stopCakeAnimation(){
     if(cakeAnimId){ cancelAnimationFrame(cakeAnimId); cakeAnimId=null; }
@@ -467,71 +470,138 @@
   }
 
   function buildCandlePositions(){
-    const rings=[{n:10,r:30},{n:20,r:62},{n:30,r:97}];
+    // Positions on perspective-projected ellipse top: 10+20+30 = 60
+    const rings=[{n:10,rx:26,ry:7},{n:20,rx:54,ry:14},{n:30,rx:86,ry:22}];
     const out=[];
-    rings.forEach(({n,r})=>{
+    rings.forEach(({n,rx,ry})=>{
       for(let i=0;i<n;i++){
         const a=(i/n)*Math.PI*2-Math.PI/2;
-        const cx=150+Math.cos(a)*r, cy=150+Math.sin(a)*r;
-        out.push({x:cx,y:cy,lit:false,out:false,smoke:0,col:CANDLE_COLS[out.length%CANDLE_COLS.length]});
+        out.push({
+          ex: CK.cx+Math.cos(a)*rx,
+          ey: CK.topY+Math.sin(a)*ry,
+          lit:false, out:false, smoke:0,
+          col: CANDLE_COLS[out.length%CANDLE_COLS.length]
+        });
       }
     });
+    // Sort back→front so near candles draw on top
+    out.sort((a,b)=>a.ey-b.ey);
     return out;
   }
 
+  function buildDrips(){
+    const {cx,topY,rx,topRy}=CK, drips=[];
+    for(let i=0;i<12;i++){
+      const t=((i+0.5)/12)*2-1;           // -1..1 across cake width
+      drips.push({
+        x: cx+t*rx,
+        y: topY+topRy*Math.sqrt(1-t*t),  // front edge of top ellipse
+        h: 8+(i*7)%15                     // varied but deterministic
+      });
+    }
+    return drips;
+  }
+
   function drawCakeFrame(){
-    const c=cakeCtx, S=300;
-    c.clearRect(0,0,S,S);
+    const c=cakeCtx, W=340, H=290;
+    const {cx,topY,botY,rx,topRy,botRy}=CK;
+    c.clearRect(0,0,W,H);
 
-    // cake base
-    c.beginPath(); c.arc(150,150,138,0,Math.PI*2);
-    c.fillStyle="#f9e4b7"; c.fill();
+    // ── Plate ──
+    c.beginPath(); c.ellipse(cx,botY+20,rx+24,botRy+9,0,0,Math.PI*2);
+    c.fillStyle='#ddd5c5'; c.fill();
+    c.strokeStyle='#bba880'; c.lineWidth=2; c.stroke();
 
-    // outer ring
-    c.beginPath(); c.arc(150,150,138,0,Math.PI*2);
-    c.strokeStyle="#d4a85a"; c.lineWidth=5; c.stroke();
+    // ── Cake sides (visible cylinder) ──
+    const sideGrad=c.createLinearGradient(cx-rx,0,cx+rx,0);
+    sideGrad.addColorStop(0,'#9a6020');
+    sideGrad.addColorStop(0.1,'#c4823a');
+    sideGrad.addColorStop(0.38,'#edba70');
+    sideGrad.addColorStop(0.62,'#edba70');
+    sideGrad.addColorStop(0.9,'#c4823a');
+    sideGrad.addColorStop(1,'#9a6020');
 
-    // icing ring
-    c.beginPath(); c.arc(150,150,120,0,Math.PI*2);
-    c.strokeStyle="rgba(255,255,255,0.55)"; c.lineWidth=10; c.stroke();
+    c.beginPath();
+    c.moveTo(cx-rx,topY);
+    c.lineTo(cx-rx,botY);
+    c.ellipse(cx,botY,rx,botRy,0,Math.PI,0);    // bottom front arc
+    c.lineTo(cx+rx,topY);
+    c.ellipse(cx,topY,rx,topRy,0,0,Math.PI,true); // top back arc
+    c.closePath();
+    c.fillStyle=sideGrad; c.fill();
 
-    // decorative dots on icing ring
-    for(let i=0;i<18;i++){
-      const a=(i/18)*Math.PI*2;
-      c.beginPath(); c.arc(150+Math.cos(a)*120,150+Math.sin(a)*120,4,0,Math.PI*2);
-      c.fillStyle=i%3===0?"#f48fb1":i%3===1?"#80cbc4":"#fff176"; c.fill();
+    // Dot decorations on visible side
+    const dotStripY=topY+(botY-topY)*0.58;
+    for(let i=0;i<22;i++){
+      const a=(i/22)*Math.PI*2;
+      if(Math.sin(a)<0.05) continue;   // skip back half
+      const dx=cx+Math.cos(a)*rx*0.88;
+      const dy=dotStripY+Math.sin(a)*botRy*0.55;
+      c.beginPath(); c.arc(dx,dy,3.5,0,Math.PI*2);
+      c.fillStyle=CANDLE_COLS[i%CANDLE_COLS.length]; c.fill();
     }
 
-    // candles
-    cakeCandles.forEach(cd=>{
-      if(!cd.lit && !cd.out) return;
+    // ── Frosting drips ──
+    cakeDrips.forEach(({x,y,h})=>{
+      c.beginPath();
+      c.moveTo(x-5,y);
+      c.bezierCurveTo(x-5,y+h*.65, x-2,y+h, x,y+h+3);
+      c.bezierCurveTo(x+2,y+h, x+5,y+h*.65, x+5,y);
+      c.closePath();
+      c.fillStyle='rgba(255,255,255,.87)'; c.fill();
+    });
 
-      // body
-      c.beginPath(); c.arc(cd.x,cd.y,4.5,0,Math.PI*2);
-      c.fillStyle=cd.col; c.fill();
-      c.strokeStyle="rgba(0,0,0,.15)"; c.lineWidth=1; c.stroke();
+    // ── Top surface ──
+    c.beginPath(); c.ellipse(cx,topY,rx,topRy,0,0,Math.PI*2);
+    c.fillStyle='#f7e4bb'; c.fill();
+    c.strokeStyle='#c89848'; c.lineWidth=2.5; c.stroke();
+
+    // Frosting ring on top
+    c.beginPath(); c.ellipse(cx,topY,rx-7,topRy-2,0,0,Math.PI*2);
+    c.strokeStyle='rgba(255,255,255,.78)'; c.lineWidth=12; c.stroke();
+
+    // Dots on frosting ring
+    for(let i=0;i<16;i++){
+      const a=(i/16)*Math.PI*2;
+      c.beginPath();
+      c.arc(cx+Math.cos(a)*(rx-7), topY+Math.sin(a)*(topRy-2), 3,0,Math.PI*2);
+      c.fillStyle=CANDLE_COLS[i%CANDLE_COLS.length]; c.fill();
+    }
+
+    // ── Candles (pre-sorted back→front) ──
+    cakeCandles.forEach(cd=>{
+      if(!cd.lit&&!cd.out) return;
+      const {ex:x,ey:y}=cd;
+      const cw=4.5, ch=15;
+
+      // Body
+      c.fillStyle=cd.col;
+      c.fillRect(x-cw/2, y-ch, cw, ch);
+      // Highlight stripe
+      c.fillStyle='rgba(255,255,255,.25)';
+      c.fillRect(x-cw/2+1, y-ch, 1.5, ch);
+      // Top ellipse
+      c.beginPath(); c.ellipse(x,y-ch,cw/2,1.8,0,0,Math.PI*2);
+      c.fillStyle='#fff'; c.fill();
 
       if(!cd.out){
-        // flame flicker offset
-        const flick=Math.sin(cakeTime*0.004+cd.x*0.3)*1.2;
-        const fx=cd.x+flick, fy=cd.y-11;
+        const flick=Math.sin(cakeTime*0.004+x*0.28)*1.3;
+        const fx=x+flick*0.4, fy=y-ch-9;
 
-        // glow halo
-        const grd=c.createRadialGradient(fx,fy,0,fx,fy,7);
-        grd.addColorStop(0,"rgba(255,240,80,.9)");
-        grd.addColorStop(.5,"rgba(255,140,0,.5)");
-        grd.addColorStop(1,"rgba(255,80,0,0)");
-        c.beginPath(); c.arc(fx,fy,7,0,Math.PI*2);
+        const grd=c.createRadialGradient(fx,fy+2,0,fx,fy+2,9);
+        grd.addColorStop(0,'rgba(255,240,80,.9)');
+        grd.addColorStop(.45,'rgba(255,140,0,.55)');
+        grd.addColorStop(1,'rgba(255,60,0,0)');
+        c.beginPath(); c.ellipse(fx,fy+2,5,8,0,0,Math.PI*2);
         c.fillStyle=grd; c.fill();
 
-        // flame core
-        c.beginPath(); c.arc(fx,fy+1,2,0,Math.PI*2);
-        c.fillStyle="#fffde7"; c.fill();
+        c.beginPath(); c.ellipse(fx,fy+3,2,3,0,0,Math.PI*2);
+        c.fillStyle='#fffde7'; c.fill();
       } else if(cd.smoke<1){
-        cd.smoke=Math.min(1,cd.smoke+0.04);
+        cd.smoke=Math.min(1,cd.smoke+0.035);
         c.beginPath();
-        c.arc(cd.x,cd.y-10-cd.smoke*8,3*cd.smoke,0,Math.PI*2);
-        c.fillStyle=`rgba(180,180,180,${0.5*(1-cd.smoke)})`; c.fill();
+        c.arc(x+Math.sin(cakeTime*0.01)*2, y-ch-5-cd.smoke*9, 3*cd.smoke,0,Math.PI*2);
+        c.fillStyle=`rgba(160,160,160,${0.45*(1-cd.smoke)})`; c.fill();
       }
     });
   }
@@ -544,9 +614,11 @@
 
   function startCakeAnimation(){
     const canvas=document.getElementById("cake-canvas");
-    canvas.width=300; canvas.height=300;
+    canvas.width=340; canvas.height=290;
+    canvas.style.borderRadius="0";
     cakeCtx=canvas.getContext("2d");
     cakeCandles=buildCandlePositions();
+    cakeDrips=buildDrips();
     cakeTime=0;
     document.getElementById("redeem-btn").style.opacity="0";
     cakeTick();
@@ -555,10 +627,9 @@
       if(i<cakeCandles.length){ cakeCandles[i].lit=true; i++; }
       else{
         clearInterval(cakeAddId);
-        // show button after all candles lit
         document.getElementById("redeem-btn").style.opacity="1";
       }
-    },55); // 55ms × 60 = 3.3s
+    },55);
   }
 
   function blowAndRedeem(){
