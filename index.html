@@ -104,8 +104,8 @@
   }
   .answer-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
   input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{
-    font-family:var(--font);font-size:17px;color:var(--ink);
-    background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:12px;
+    font-family:var(--font);font-size:17px;color:#1a1a2e;
+    background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:12px;
     padding:13px 14px;outline:none;width:100%;
   }
   input:focus,select:focus,textarea:focus{border-color:var(--gold)}
@@ -403,6 +403,7 @@
     const idx = STAGES.indexOf(name);
     if(idx > maxStageIdx) maxStageIdx = idx;
     if(name === "redeem") startCakeAnimation();
+    if(name === "form") initFormDates();
     updateFwdButtons();
     window.scrollTo({top:0,behavior:"smooth"});
   }
@@ -674,13 +675,45 @@
     },28); // 28ms × 60 = ~1.7s
   }
 
+  /* ---- form date constraints ---- */
+  function initFormDates(){
+    const f=document.getElementById("bookForm");
+    const depInput=f.elements["date"];
+    const retInput=f.elements["return-date"];
+    const today=new Date().toISOString().slice(0,10);
+    depInput.min=today;
+    if(depInput.value && depInput.value < today) depInput.value="";
+    function syncRetMin(){
+      const d=depInput.value||today;
+      retInput.min=d;
+      if(retInput.value && retInput.value < d) retInput.value="";
+    }
+    syncRetMin();
+    depInput.removeEventListener("change",syncRetMin);
+    depInput.addEventListener("change",syncRetMin);
+  }
+
   /* ---- form → Formspree ---- */
   async function submitForm(e){
     e.preventDefault();
     const f=e.target;
     const g=n=>(f.elements[n].value||"—");
     const btn=f.querySelector("button[type=submit]");
+
     const done=document.getElementById("formDone");
+    const depVal=f.elements["date"].value;
+    const retVal=f.elements["return-date"].value;
+    const today=new Date().toISOString().slice(0,10);
+    if(depVal && depVal < today){
+      done.className="feedback err";
+      done.textContent="Η ημερομηνία αναχώρησης πρέπει να είναι στο μέλλον.";
+      return false;
+    }
+    if(retVal && depVal && retVal < depVal){
+      done.className="feedback err";
+      done.textContent="Η ημερομηνία επιστροφής πρέπει να είναι μετά την αναχώρηση.";
+      return false;
+    }
 
     btn.disabled=true;
     btn.textContent="Αποστολή…";
